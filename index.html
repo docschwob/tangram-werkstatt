@@ -5,9 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="Tangram-Werkstatt: digitales Tangram mit sechsstufiger Schwierigkeitsleiter für den Mathematikunterricht der Grundschule (GIMB Münster).">
 <title>Tangram-Werkstatt</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
 <style>
+@font-face{font-family:"Atkinson Hyperlegible";font-style:normal;font-weight:400;font-display:swap;src:url(fonts/atkinson-hyperlegible-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Atkinson Hyperlegible";font-style:normal;font-weight:700;font-display:swap;src:url(fonts/atkinson-hyperlegible-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:"Baloo 2";font-style:normal;font-weight:600;font-display:swap;src:url(fonts/baloo-2-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:"Baloo 2";font-style:normal;font-weight:700;font-display:swap;src:url(fonts/baloo-2-latin-700-normal.woff2) format("woff2")}
 :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 body{margin:0}
 img{max-width:100%}
@@ -129,6 +131,11 @@ body.praes .stage{grid-column:1/-1}
   body.praes .stage{height:100svh}
 }
 @media (prefers-reduced-motion:no-preference){ .piece{transition:filter .15s} .tgt-ok{transition:fill .4s} }
+.impressum{margin-top:auto;padding-top:14px;border-top:1px solid var(--line);font-size:.78rem;line-height:1.45;color:var(--muted);display:grid;gap:4px}
+.impressum p{margin:0}
+.impressum a{color:var(--accent)}
+.impressum summary{cursor:pointer;color:var(--ink);font-weight:700}
+.impressum details p{margin-top:6px}
 </style>
 </head>
 <body>
@@ -193,6 +200,17 @@ body.praes .stage{grid-column:1/-1}
       <label class="chk"><input type="checkbox" id="optCheck" checked><span>Prüfen-Knopf anzeigen</span></label>
       <p class="note">Ein Link mit <code>#ohne-pruefen</code> am Ende öffnet die Werkstatt ohne Prüfen-Knopf.</p>
     </section>
+    <footer class="impressum">
+      <p>Dr. Simeon Schwob · GIMB – Institut für grundlegende und inklusive mathematische Bildung, Universität Münster</p>
+      <p>Keine Datenerhebung · Code: MIT · Materialien: CC BY 4.0</p>
+      <details>
+        <summary>Lizenz und Datenschutz</summary>
+        <p>Die App sendet keine Eingaben an einen Server und speichert nichts. Der Lege-Verlauf existiert nur in diesem Browserfenster und ist beim Schließen weg.</p>
+        <p>Die Seite wird über GitHub Pages bereitgestellt. GitHub verarbeitet dabei technisch notwendige Zugriffsdaten wie die IP-Adresse (<a href="https://docs.github.com/de/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">Datenschutzerklärung von GitHub</a>). Schriften liegen auf demselben Server, Dienste Dritter sind nicht eingebunden.</p>
+        <p>Programmcode: <a href="https://opensource.org/license/mit" target="_blank" rel="noopener">MIT-Lizenz</a>. Aufgaben, Texte und Abbildungen: <a href="https://creativecommons.org/licenses/by/4.0/deed.de" target="_blank" rel="noopener">CC BY 4.0</a>. Schriften Atkinson Hyperlegible und Baloo 2: SIL Open Font License 1.1.</p>
+        <p><a href="https://github.com/docschwob/tangram-werkstatt" target="_blank" rel="noopener">Quellcode auf GitHub</a></p>
+      </details>
+    </footer>
   </aside>
 
   <main class="stage">
