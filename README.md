@@ -10,9 +10,11 @@ Digitales Tangram für den Mathematikunterricht der Grundschule (Klasse 1–4) u
 - Hilfen, Rückgängig, Schrittprotokoll mit Wiedergabe, Präsentationsmodus
 - Läuft im Browser auf Tablet und Rechner, ohne Anmeldung und ohne Installation
 
-## Herausgeber
+## Urheber
 
-Dr. Simeon Schwob, GIMB – Institut für grundlegende und inklusive mathematische Bildung, Universität Münster
+Dr. Simeon Schwob (GIMB, Universität Münster). Privates Angebot, kein offizielles Angebot der Universität Münster.
+
+[Impressum](https://docschwob.github.io/impressum.html)
 
 ## Datenschutz
 
