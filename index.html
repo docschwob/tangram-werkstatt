@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Tangram-Werkstatt: digitales Tangram mit sechsstufiger Schwierigkeitsleiter für den Mathematikunterricht der Grundschule (GIMB Münster).">
+<title>Tangram-Werkstatt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+img{max-width:100%}
+/* Layout: Werkbank – die Legetafel ist die Hauptfläche, die Werkzeugleiste liegt daneben (breit) bzw. darunter (Telefon) */
+:root{
+  --board:#E4EBE7; --board-dot:#C3CFC9; --panel:#F5F8F6; --ink:#1B2927; --muted:#56665F; --line:#CBD5CF;
+  --accent:#1D6683; --accent-soft:#D6E6EC; --accent-ink:#FFFFFF;
+  --target:#3A4643; --target-line:#E4EBE7; --target-ok:#2E7D57;
+  --gap:#2FA9E0; --over:#E0474C; --overlap:#B05AD3;
+  --p-lt1:#E1552C; --p-lt2:#EFA314; --p-mt:#2B7BB3; --p-st1:#69A838; --p-st2:#8858A6; --p-sq:#DB6596; --p-pa:#139585; --p-mono:#B48650;
+  --piece-edge:rgba(20,30,28,.55);
+  --f-display:"Baloo 2","Trebuchet MS",system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --board:#1E2725; --board-dot:#34413D; --panel:#151C1B; --ink:#E3ECE8; --muted:#9AABA4; --line:#2F3B38;
+  --accent:#6CB8D6; --accent-soft:#1F3A45; --accent-ink:#0D1A1F;
+  --target:#56645F; --target-line:#1E2725; --target-ok:#3F9E70;
+  --gap:#52C6F5; --over:#FF6A6E; --overlap:#D486F0;
+  --piece-edge:rgba(0,0,0,.55);
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --board:#1E2725; --board-dot:#34413D; --panel:#151C1B; --ink:#E3ECE8; --muted:#9AABA4; --line:#2F3B38;
+  --accent:#6CB8D6; --accent-soft:#1F3A45; --accent-ink:#0D1A1F;
+  --target:#56645F; --target-line:#1E2725; --target-ok:#3F9E70;
+  --gap:#52C6F5; --over:#FF6A6E; --overlap:#D486F0;
+  --piece-edge:rgba(0,0,0,.55);
+  color-scheme:dark;
+}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{background:var(--panel);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45}
+*{box-sizing:border-box}
+button{font:inherit;color:inherit}
+.app{height:100%;display:grid;grid-template-columns:minmax(280px,320px) 1fr;grid-template-rows:auto 1fr;
+  padding-left:max(0px,env(safe-area-inset-left,0px));padding-right:max(0px,env(safe-area-inset-right,0px))}
+header{grid-column:1/-1;display:flex;align-items:center;gap:12px;padding-block:10px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));border-bottom:1px solid var(--line)}
+.logo{width:34px;height:34px;flex:none}
+h1{font-family:var(--f-display);font-weight:700;font-size:1.45rem;margin:0;letter-spacing:.01em;line-height:1}
+header .sub{color:var(--muted);font-size:.85rem}
+header .spacer{flex:1}
+.panel{overflow:auto;padding:16px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:20px;min-width:0}
+.panel h2{font-family:var(--f-display);font-size:.8rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin:0 0 8px;font-weight:700}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);background:var(--board);border-radius:var(--r);padding:4px;gap:4px}
+.seg button{border:0;background:transparent;border-radius:7px;padding:9px 4px;font-weight:700;font-size:.9rem;cursor:pointer;min-height:44px}
+.seg button b{color:var(--muted);font-variant-numeric:tabular-nums;margin-right:2px}
+.seg button[aria-pressed="true"] b{color:inherit}
+.card{padding-block:12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));background:var(--panel);border-bottom:1px solid var(--line);display:grid;gap:6px;max-height:42%;overflow:auto}
+.card-k{font-family:var(--f-display);font-size:.78rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:700}
+#cardBody{max-width:62ch;font-size:1.05rem;line-height:1.5}
+#cardBody p{margin:0 0 4px}
+#cardBody .pcs{color:var(--muted);font-size:.9rem}
+.card-in{display:grid;gap:4px;max-width:62ch}
+.card-in label{font-size:.82rem;color:var(--muted)}
+.card-in input,.card-in textarea{font:inherit;color:var(--ink);background:var(--board);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
+.card-in textarea{resize:vertical}
+.card-in input:focus-visible,.card-in textarea:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
+.seg button[aria-pressed="true"]{background:var(--panel);box-shadow:0 1px 2px rgba(0,0,0,.12);color:var(--accent)}
+.modehint{color:var(--muted);font-size:.85rem;margin:8px 0 0}
+.level{margin-bottom:12px}
+.level-h{font-weight:700;font-size:.85rem;margin-bottom:6px;display:flex;gap:8px;align-items:baseline}
+.level-h span{color:var(--muted);font-weight:400}
+.tasks{display:grid;grid-template-columns:repeat(auto-fill,minmax(82px,1fr));gap:6px}
+.task{border:1px solid var(--line);background:var(--panel);border-radius:var(--r);padding:6px 4px 5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;min-height:44px}
+.task svg{width:44px;height:44px;color:var(--target)}
+.task .tn{font-size:.75rem;line-height:1.15;text-align:center}
+.task[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.task:focus-visible,.btn:focus-visible,.seg button:focus-visible,.chk input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:var(--r);padding:9px 14px;font-weight:700;cursor:pointer;min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn:hover{border-color:var(--accent)}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.small{min-height:36px;padding:6px 10px;font-size:.85rem}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+.chk{display:flex;gap:10px;align-items:flex-start;padding:6px 0;cursor:pointer}
+.chk input{width:20px;height:20px;margin:1px 0 0;accent-color:var(--accent);flex:none}
+.note{color:var(--muted);font-size:.8rem;margin:6px 0 0}
+code{font-size:.85em;background:var(--board);padding:1px 4px;border-radius:4px}
+.log{max-height:170px;overflow:auto;border:1px solid var(--line);border-radius:var(--r);margin:8px 0 0;padding:4px 0;list-style:none;font-size:.82rem}
+.log li{padding:3px 10px;display:flex;gap:8px}
+.log li .tm{color:var(--muted);font-variant-numeric:tabular-nums;flex:none}
+.log li.cur{background:var(--accent-soft)}
+.log:empty::before{content:"Noch keine Schritte.";display:block;padding:6px 10px;color:var(--muted)}
+.stage{position:relative;display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--board)}
+.boardwrap{flex:1;position:relative;min-height:0}
+#board{position:absolute;inset:0;width:100%;height:100%;touch-action:none;user-select:none;-webkit-user-select:none;display:block}
+.piece{cursor:grab}
+.piece polygon{stroke:var(--piece-edge);stroke-width:.05;stroke-linejoin:round;vector-effect:none}
+.piece.sel polygon{stroke:var(--ink);stroke-width:.12}
+.piece.locked{cursor:default}
+.piece.locked polygon{stroke-dasharray:.25 .18}
+.piece:focus{outline:none}
+.piece:focus-visible polygon{stroke:var(--accent);stroke-width:.16}
+.bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-block:10px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));border-top:1px solid var(--line);background:var(--panel)}
+.bar .selinfo{flex:1;min-width:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:var(--muted);font-size:.9rem}
+.bar .selinfo b{color:var(--ink)}
+.swatch{width:14px;height:14px;border-radius:3px;display:inline-block;flex:none}
+.feedback{position:absolute;left:50%;top:12px;transform:translateX(-50%);background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px 10px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;box-shadow:0 4px 18px rgba(0,0,0,.12);max-width:calc(100% - 32px);font-weight:700}
+.feedback.ok{border-color:var(--target-ok);color:var(--target-ok)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-weight:400;font-size:.82rem;color:var(--ink)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.replaybar{position:absolute;left:12px;right:12px;bottom:12px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px 12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;box-shadow:0 4px 18px rgba(0,0,0,.12)}
+.replaybar input{flex:1;min-width:120px;accent-color:var(--accent)}
+.replaybar .cnt{font-variant-numeric:tabular-nums;font-size:.85rem;color:var(--muted)}
+.exitpraes{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));right:max(10px,env(safe-area-inset-right,0px))}
+body.praes .panel, body.praes header{display:none}
+body.praes .app{grid-template-columns:1fr;grid-template-rows:1fr}
+body.praes .stage{grid-column:1/-1}
+@media (max-width:760px){
+  .app{grid-template-columns:1fr;grid-template-rows:auto auto auto;height:auto}
+  html,body{height:auto}
+  .stage{height:68svh;min-height:420px;order:2}
+  .panel{order:3;border-right:0;border-top:1px solid var(--line);overflow:visible;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  header .sub{display:none}
+  body.praes .stage{height:100svh}
+}
+@media (prefers-reduced-motion:no-preference){ .piece{transition:filter .15s} .tgt-ok{transition:fill .4s} }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header>
+    <svg class="logo" viewBox="0 0 8 8" aria-hidden="true">
+      <polygon points="0,0 8,0 4,4" fill="var(--p-lt1)"/><polygon points="0,0 4,4 0,8" fill="var(--p-lt2)"/>
+      <polygon points="8,4 8,8 4,8" fill="var(--p-mt)"/><polygon points="8,0 8,4 6,2" fill="var(--p-st1)"/>
+      <polygon points="4,4 6,2 8,4 6,6" fill="var(--p-sq)"/><polygon points="2,6 4,4 6,6" fill="var(--p-st2)"/>
+      <polygon points="0,8 2,6 6,6 4,8" fill="var(--p-pa)"/>
+    </svg>
+    <div><h1>Tangram-Werkstatt</h1><div class="sub">Legen, nachlegen, erfinden – Klasse 1 bis 4</div></div>
+    <div class="spacer"></div>
+    <button class="btn small" id="btnPraes" title="Präsentationsmodus für den Beamer">Präsentieren</button>
+  </header>
+
+  <aside class="panel" aria-label="Werkzeuge">
+    <section>
+      <h2>Schwierigkeitsleiter</h2>
+      <div class="seg" role="group" aria-label="Stufe">
+        <button data-stage="1" aria-pressed="false"><b>1</b> Farbig</button>
+        <button data-stage="2" aria-pressed="true"><b>2</b> Linien</button>
+        <button data-stage="3" aria-pressed="false"><b>3</b> Umriss</button>
+        <button data-stage="4" aria-pressed="false"><b>4</b> Klein</button>
+        <button data-stage="5" aria-pressed="false"><b>5</b> Worte</button>
+        <button data-stage="6" aria-pressed="false"><b>6</b> Erfinden</button>
+      </div>
+      <p class="modehint" id="modeHint"></p>
+    </section>
+
+    <section id="secTasks">
+      <h2>Aufgaben</h2>
+      <div id="taskList"></div>
+    </section>
+
+    <section id="secHelp">
+      <h2>Hilfen</h2>
+      <div class="row">
+        <button class="btn small" id="btnPlace">Ein Teil vorlegen</button>
+        <button class="btn small" id="btnLine">Eine Linie zeigen</button>
+        <button class="btn small" id="btnPeek">Bild kurz zeigen</button>
+      </div>
+      <p class="note" id="helpNote"></p>
+    </section>
+
+    <section>
+      <h2>Verlauf</h2>
+      <div class="row">
+        <button class="btn small" id="btnUndo">Rückgängig</button>
+        <button class="btn small" id="btnReplay">Wiedergabe</button>
+        <button class="btn small" id="btnReset">Neu beginnen</button>
+      </div>
+      <ol class="log" id="log"></ol>
+    </section>
+
+    <section>
+      <h2>Einstellungen</h2>
+      <label class="chk"><input type="checkbox" id="optSnap" checked><span>Einrasten an Ecken<br><span class="note">Teile drehen frei, legen sich beim Loslassen an nahe Ecken an.</span></span></label>
+      <label class="chk"><input type="checkbox" id="optRotBtn"><span>Dreh-Knöpfe in 45°-Schritten</span></label>
+      <label class="chk"><input type="checkbox" id="optMono"><span>Alle Teile in einer Farbe</span></label>
+      <label class="chk"><input type="checkbox" id="optCheck" checked><span>Prüfen-Knopf anzeigen</span></label>
+      <p class="note">Ein Link mit <code>#ohne-pruefen</code> am Ende öffnet die Werkstatt ohne Prüfen-Knopf.</p>
+    </section>
+  </aside>
+
+  <main class="stage">
+    <div class="card" id="card" hidden>
+      <div class="card-k" id="cardK"></div>
+      <div id="cardBody"></div>
+      <div class="card-in" id="cardIn" hidden>
+        <label for="figName">Name der Figur</label>
+        <input id="figName" type="text" autocomplete="off" placeholder="z. B. Katze">
+        <label for="figDesc">Beschreibung, damit jemand anderes sie nachlegen kann</label>
+        <textarea id="figDesc" rows="3" placeholder="Was liegt wo? Welche Teile berühren sich?"></textarea>
+      </div>
+    </div>
+    <div class="boardwrap">
+      <svg id="board" role="application" aria-label="Legetafel">
+        <defs>
+          <pattern id="dots" width="1" height="1" patternUnits="userSpaceOnUse">
+            <circle cx=".5" cy=".5" r=".045" fill="var(--board-dot)"/>
+          </pattern>
+        </defs>
+        <rect id="bg" x="-100" y="-100" width="300" height="300" fill="url(#dots)"/>
+        <g id="layerTarget"></g>
+        <g id="layerMarks"></g>
+        <g id="layerPieces"></g>
+        <g id="layerHandle"></g>
+      </svg>
+      <div class="feedback" id="feedback" hidden></div>
+      <div class="replaybar" id="replaybar" hidden>
+        <button class="btn small" id="rpPlay">Abspielen</button>
+        <input type="range" id="rpSlider" min="0" max="0" value="0" aria-label="Schritt">
+        <span class="cnt" id="rpCount"></span>
+        <button class="btn small" id="rpExit">Zurück zum Legen</button>
+      </div>
+      <button class="btn small exitpraes" id="btnExitPraes" hidden>Präsentation beenden</button>
+    </div>
+    <div class="bar">
+      <div class="selinfo" id="selinfo">Tippe ein Teil an. Am Griff drehst du es, mit zwei Fingern auch.</div>
+      <button class="btn" id="btnCheck">Prüfen</button>
+    </div>
+  </main>
+</div>
+
+<script>
+(() => {
+"use strict";
+const NS = "http://www.w3.org/2000/svg";
+const r2 = Math.SQRT2, s = 2 * r2;
+const $ = id => document.getElementById(id);
+
+/* ---------- Teile ---------- */
+const TYPES = {
+  LT: { name: "großes Dreieck", pts: [[0,0],[8,0],[4,4]] },
+  MT: { name: "mittleres Dreieck", pts: [[0,0],[4*r2,0],[2*r2,2*r2]] },
+  ST: { name: "kleines Dreieck", pts: [[0,0],[4,0],[2,2]] },
+  SQ: { name: "Quadrat", pts: [[0,0],[s,0],[s,s],[0,s]] },
+  PA: { name: "Parallelogramm", pts: [[0,0],[4,0],[6,2],[2,2]] },
+};
+for (const t of Object.values(TYPES)) {
+  const xs = t.pts.map(p => p[0]), ys = t.pts.map(p => p[1]);
+  const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+  t.local = t.pts.map(p => [p[0] - cx, p[1] - cy]);
+  t.radius = Math.max(...t.local.map(p => Math.hypot(p[0], p[1])));
+}
+const SET = [
+  { id: "LT1", type: "LT", color: "--p-lt1" },
+  { id: "LT2", type: "LT", color: "--p-lt2" },
+  { id: "MT",  type: "MT", color: "--p-mt"  },
+  { id: "PA",  type: "PA", color: "--p-pa"  },
+  { id: "ST1", type: "ST", color: "--p-st1" },
+  { id: "ST2", type: "ST", color: "--p-st2" },
+  { id: "SQ",  type: "SQ", color: "--p-sq"  },
+];
+const SLOTS = {
+  land: { LT1:[16,-7], LT2:[24.5,-7], MT:[16,-1], PA:[24.5,-1], ST1:[15,5], ST2:[20.5,5], SQ:[26,5] },
+  port: { LT1:[-5.5,14], LT2:[4.5,14], MT:[-6,19], PA:[1.5,19], SQ:[8,19], ST1:[-5,23.5], ST2:[1,23.5] },
+};
+const VIEW = { land: [-11,-11,40,22], port: [-11,-11,22,37.5] };
+
+/* ---------- Aufgaben (Koordinaten mit y nach oben, Quadratseite 8) ---------- */
+const P = (t, ...pts) => ({ t, pts });
+const PUZZLES = [
+  { id:"quadrat2", level:1, name:"Quadrat", pieces:[ P("ST",[0,0],[4,0],[2,2]), P("ST",[0,0],[2,-2],[4,0]) ] },
+  { id:"dreieck2", level:1, name:"Dreieck", pieces:[ P("ST",[0,0],[4,0],[2,2]), P("ST",[0,0],[2,2],[0,4]) ] },
+  { id:"para2", level:1, name:"Parallelogramm", pieces:[ P("ST",[0,0],[4,0],[2,2]), P("ST",[4,0],[6,2],[2,2]) ] },
+  { id:"rechteck3", level:1, name:"Rechteck", pieces:[ P("SQ",[0,0],[s,0],[s,s],[0,s]), P("ST",[s,0],[2*s,0],[s,s]), P("ST",[2*s,0],[2*s,s],[s,s]) ] },
+  { id:"haus4", level:2, name:"Haus", pieces:[ P("LT",[0,4],[8,4],[4,8]), P("MT",[2,0],[6,0],[2,4]), P("ST",[6,0],[6,4],[4,2]), P("ST",[2,4],[4,2],[6,4]) ] },
+  { id:"boot4", level:2, name:"Boot", pieces:[ P("ST",[0,2],[4,2],[2,0]), P("PA",[2,0],[6,0],[8,2],[4,2]), P("LT",[4,2],[4,10],[0,6]), P("MT",[4,2],[8,2],[4,6]) ] },
+  { id:"dreieck5", level:2, name:"Großes Dreieck", pieces:[ P("MT",[8,4],[8,8],[4,8]), P("ST",[8,0],[8,4],[6,2]), P("SQ",[4,4],[6,2],[8,4],[6,6]), P("ST",[2,6],[4,4],[6,6]), P("PA",[0,8],[2,6],[6,6],[4,8]) ] },
+  { id:"segelboot6", level:3, name:"Segelboot", pieces:[ P("ST",[0,2],[4,2],[2,0]), P("PA",[2,0],[6,0],[8,2],[4,2]), P("LT",[4,2],[4,10],[0,6]), P("MT",[4,2],[8,2],[4,6]), P("SQ",[4,6],[6,4],[8,6],[6,8]), P("ST",[4,6],[6,8],[4,10]) ] },
+  { id:"haus6", level:3, name:"Haus mit Schornstein", pieces:[ P("LT",[0,0],[8,0],[4,4]), P("MT",[0,0],[4,4],[0,4]), P("ST",[8,0],[8,4],[6,2]), P("ST",[8,4],[4,4],[6,2]), P("LT",[0,4],[8,4],[4,8]), P("PA",[5,7],[7,5],[7,9],[5,11]) ] },
+  { id:"hausgarage", level:3, name:"Haus mit Garage", pieces:[ P("LT",[0,0],[8,0],[4,4]), P("LT",[4,4],[12,4],[8,0]), P("MT",[12,4],[12,0],[8,0]), P("ST",[0,0],[0,4],[2,2]), P("SQ",[0,4],[2,2],[4,4],[2,6]), P("PA",[2,6],[4,4],[8,4],[6,6]), P("ST",[2,6],[6,6],[4,8]) ] },
+  { id:"quadrat7", level:3, name:"Großes Quadrat", pieces:[ P("LT",[0,0],[8,0],[4,4]), P("LT",[0,0],[4,4],[0,8]), P("MT",[8,4],[8,8],[4,8]), P("ST",[8,0],[8,4],[6,2]), P("SQ",[4,4],[6,2],[8,4],[6,6]), P("ST",[2,6],[4,4],[6,6]), P("PA",[0,8],[2,6],[6,6],[4,8]) ] },
+];
+const LEVELS = { 1:"Leicht", 2:"Mittel", 3:"Schwer" };
+const DESC = {
+  quadrat2: ["Lege ein Quadrat."],
+  dreieck2: ["Lege ein Dreieck mit einem rechten Winkel.", "Es ist doppelt so groß wie ein kleines Dreieck."],
+  para2: ["Lege eine Figur, die genauso aussieht wie das Parallelogramm aus dem Tangram."],
+  rechteck3: ["Lege ein Rechteck. Es ist doppelt so lang wie hoch."],
+  haus4: ["Ein Haus.", "Unten steht ein Quadrat. Darauf sitzt ein Dach mit einem rechten Winkel an der Spitze.", "Das Dach ist doppelt so breit wie das Quadrat und steht links und rechts gleich weit über."],
+  boot4: ["Ein Boot.", "Der Rumpf ist unten schmaler als oben. Auf der Mitte des Rumpfs steht ein senkrechter Mast.", "Links vom Mast hängt ein großes Segel mit seiner langen Seite am Mast. Rechts steht ein kleineres Segel, das den Mast und den Rumpf berührt."],
+  dreieck5: ["Lege ein großes Dreieck mit einem rechten Winkel.", "Es ist so groß wie die beiden großen Dreiecke zusammen."],
+  segelboot6: ["Ein Segelboot.", "Es sieht aus wie das Boot, aber das rechte Segel ist höher: Es reicht bis zur Spitze des Mastes und hat am Rand eine Zacke."],
+  haus6: ["Ein Haus mit Schornstein.", "Das Haus ist ein Rechteck. Es ist doppelt so breit wie hoch. Darauf sitzt ein Dach, genauso breit wie das Haus, mit einem rechten Winkel an der Spitze.", "Auf der rechten Dachseite steht der Schornstein. Seine beiden langen Seiten sind senkrecht."],
+  hausgarage: ["Ein Haus mit Garage.", "Das Haus ist ein Rechteck. Es ist doppelt so breit wie hoch. Auf dem Haus sitzt ein spitzes Dach. Die Dachspitze liegt genau über der Mitte des Hauses und bildet einen rechten Winkel.", "Rechts neben dem Haus steht die Garage. Sie ist ein Quadrat, genauso hoch wie das Haus, und hat kein Dach."],
+  quadrat7: ["Lege ein großes Quadrat."],
+};
+const PLURAL = { LT: ["große Dreieck", "großen Dreiecke"], MT: ["mittlere Dreieck", "mittleren Dreiecke"], ST: ["kleine Dreieck", "kleinen Dreiecke"], SQ: ["Quadrat", "Quadrate"], PA: ["Parallelogramm", "Parallelogramme"] };
+function pieceList(pz) {
+  const c = {}; for (const p of pz.polys) c[p.t] = (c[p.t] || 0) + 1;
+  if (pz.polys.length === 7) return "Benutze alle sieben Teile.";
+  const parts = ["LT","MT","ST","SQ","PA"].filter(t => c[t]).map(t => c[t] === 1 ? "das " + PLURAL[t][0] : "die zwei " + PLURAL[t][1]);
+  return "Benutze " + (parts.length > 1 ? parts.slice(0, -1).join(", ") + " und " + parts.at(-1) : parts[0]) + ".";
+}
+function areaCentroid(polys) {
+  let A = 0, X = 0, Y = 0;
+  for (const pl of polys) for (let i = 0; i < pl.length; i++) {
+    const [x0, y0] = pl[i], [x1, y1] = pl[(i + 1) % pl.length], c = x0 * y1 - x1 * y0;
+    A += c; X += (x0 + x1) * c; Y += (y0 + y1) * c;
+  }
+  return Math.abs(A) < 1e-9 ? [0, 0] : [X / (3 * A), Y / (3 * A)];
+}
+for (const pz of PUZZLES) {
+  const all = pz.pieces.flatMap(p => p.pts.map(q => [q[0], -q[1]]));
+  const xs = all.map(p => p[0]), ys = all.map(p => p[1]);
+  const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+  pz.polys = pz.pieces.map(p => ({ t: p.t, pts: p.pts.map(q => [q[0] - cx, -q[1] - cy]) }));
+  pz.w = Math.max(...xs) - Math.min(...xs); pz.h = Math.max(...ys) - Math.min(...ys);
+}
+
+/* ---------- Zustand ---------- */
+const st = {
+  stage: 2, puzzle: PUZZLES[0], pieces: [], selected: null,
+  snap: true, rotBtns: false, mono: false, showCheck: true,
+  revealed: 0, log: [], undo: [], t0: Date.now(), orient: "land", marks: null, solved: false,
+};
+let replay = null;
+
+function isPortrait() {
+  const w = $("board").clientWidth || 800, h = $("board").clientHeight || 500;
+  return w / h < 1.2;
+}
+function freshPieces() {
+  const need = {};
+  if (st.stage !== 6 && st.puzzle) for (const p of st.puzzle.polys) need[p.t] = (need[p.t] || 0) + 1;
+  const used = {};
+  st.pieces = SET.map(d => {
+    used[d.type] = (used[d.type] || 0) + 1;
+    const visible = st.stage === 6 || used[d.type] <= (need[d.type] || 0);
+    const [x, y] = SLOTS[st.orient][d.id];
+    return { ...d, x, y, rot: 0, flip: false, visible, inTray: true, locked: false, poly: null };
+  });
+}
+function snapshot() { return st.pieces.map(p => ({ id:p.id, x:p.x, y:p.y, rot:p.rot, flip:p.flip, visible:p.visible, inTray:p.inTray, locked:p.locked, poly:p.poly, polyIndex:p.polyIndex, z:p.z })); }
+function restore(snap) {
+  for (const sp of snap) Object.assign(st.pieces.find(p => p.id === sp.id), sp);
+}
+
+/* ---------- Geometrie ---------- */
+function absPoly(p) {
+  if (p.locked && p.poly) return p.poly;
+  const a = p.rot * Math.PI / 180, c = Math.cos(a), sn = Math.sin(a);
+  return TYPES[p.type].local.map(([lx, ly]) => {
+    const x = p.flip ? -lx : lx;
+    return [p.x + x * c - ly * sn, p.y + x * sn + ly * c];
+  });
+}
+function centroid(pts) { let x = 0, y = 0; for (const q of pts) { x += q[0]; y += q[1]; } return [x / pts.length, y / pts.length]; }
+function inside(pt, poly) {
+  let ins = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, yi] = poly[i], [xj, yj] = poly[j];
+    if ((yi > pt[1]) !== (yj > pt[1]) && pt[0] < (xj - xi) * (pt[1] - yi) / (yj - yi) + xi) ins = !ins;
+  }
+  return ins;
+}
+const onBoard = p => p.visible && (p.locked || (Math.abs(p.x) <= 11.5 && Math.abs(p.y) <= 11.5));
+const fmt = n => Math.round(n * 1000) / 1000;
+const ptsAttr = pts => pts.map(q => fmt(q[0]) + "," + fmt(q[1])).join(" ");
+
+/* ---------- Darstellung ---------- */
+const svg = $("board");
+const els = {};
+function el(tag, attrs, parent) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function setView() {
+  const o = isPortrait() ? "port" : "land";
+  if (o !== st.orient) {
+    st.orient = o;
+    for (const p of st.pieces) if (p.inTray && !p.locked) [p.x, p.y] = SLOTS[o][p.id];
+  }
+  svg.setAttribute("viewBox", VIEW[o].join(" "));
+  renderPieces();
+}
+function renderTarget() {
+  const L = $("layerTarget"); L.innerHTML = "";
+  if (st.stage === 6 || !st.puzzle) return;
+  const fill = st.solved ? "var(--target-ok)" : "var(--target)";
+  if (st.stage >= 4) {
+    // Stufe 4: verkleinerte Karte in der Ecke · Stufe 5: nur bei „Bild kurz zeigen“ oder nach dem Lösen
+    if (st.stage === 5 && !st.peek && !st.solved) return;
+    const pz = st.puzzle, sc = .5;
+    const cx = -11 + pz.w * sc / 2 + 1.2, cy = -11 + pz.h * sc / 2 + 1.2;
+    el("rect", { x: cx - pz.w * sc / 2 - .7, y: cy - pz.h * sc / 2 - .7, width: pz.w * sc + 1.4, height: pz.h * sc + 1.4, rx: ".35", fill: "var(--panel)", stroke: "var(--line)", "stroke-width": ".06" }, L);
+    const g = el("g", { transform: `translate(${fmt(cx)} ${fmt(cy)}) scale(${sc})` }, L);
+    for (const p of pz.polys)
+      el("polygon", { points: ptsAttr(p.pts), fill, stroke: fill, "stroke-width": ".1", "stroke-linejoin": "round", class: "tgt-ok" }, g);
+    return;
+  }
+  for (const p of st.puzzle.polys)
+    el("polygon", { points: ptsAttr(p.pts), fill, stroke: fill, "stroke-width": ".06", "stroke-linejoin": "round", class: "tgt-ok" }, L);
+  if (st.stage === 1 && !st.solved) {
+    const used = {};
+    for (const p of st.puzzle.polys) {
+      const i = used[p.t] = (used[p.t] || 0) + 1;
+      const d = SET.filter(x => x.type === p.t)[i - 1] || SET.find(x => x.type === p.t);
+      el("polygon", { points: ptsAttr(p.pts), fill: st.mono ? "var(--p-mono)" : `var(${d.color})`, opacity: ".45" }, L);
+    }
+  }
+  const lines = st.stage <= 2 ? st.puzzle.polys : st.puzzle.polys.slice(0, st.revealed);
+  for (const p of lines)
+    el("polygon", { points: ptsAttr(p.pts), fill: "none", stroke: "var(--target-line)", "stroke-width": ".07", "stroke-linejoin": "round" }, L);
+}
+function colorOf(p) { return st.mono ? "var(--p-mono)" : `var(${p.color})`; }
+function renderPieces() {
+  const L = $("layerPieces"); L.innerHTML = "";
+  const order = [...st.pieces].sort((a, b) => (a.z || 0) - (b.z || 0));
+  for (const p of order) {
+    if (!p.visible) continue;
+    const g = el("g", { class: "piece" + (p.locked ? " locked" : "") + (st.selected === p.id ? " sel" : ""), "data-piece": p.id, tabindex: p.locked ? "-1" : "0", role: "img", "aria-label": TYPES[p.type].name + (p.locked ? " (vorgelegt)" : "") }, L);
+    el("polygon", { points: ptsAttr(absPoly(p)), fill: colorOf(p) }, g);
+    els[p.id] = g;
+  }
+  renderHandle();
+}
+function updatePiece(p) {
+  const g = els[p.id]; if (!g) return;
+  g.firstChild.setAttribute("points", ptsAttr(absPoly(p)));
+  renderHandle();
+}
+function renderHandle() {
+  const L = $("layerHandle"); L.innerHTML = "";
+  const p = sel(); if (!p || p.locked || replay) return;
+  const a = (p.rot - 90) * Math.PI / 180, d = TYPES[p.type].radius + 1.1;
+  const hx = p.x + Math.cos(a) * d, hy = p.y + Math.sin(a) * d;
+  el("line", { x1: p.x, y1: p.y, x2: hx, y2: hy, stroke: "var(--ink)", "stroke-width": ".06", "stroke-dasharray": ".2 .15", opacity: ".6" }, L);
+  const g = el("g", { "data-handle": "1", style: "cursor:grab" }, L);
+  el("circle", { cx: hx, cy: hy, r: "1.15", fill: "transparent" }, g);
+  el("circle", { cx: hx, cy: hy, r: ".62", fill: "var(--panel)", stroke: "var(--ink)", "stroke-width": ".08" }, g);
+  el("path", { d: `M ${hx-.3} ${hy+.05} A .3 .3 0 1 1 ${hx+.05} ${hy+.3}`, fill: "none", stroke: "var(--ink)", "stroke-width": ".08", "stroke-linecap": "round" }, g);
+  el("circle", { cx: p.x, cy: p.y, r: ".12", fill: "var(--ink)", opacity: ".6" }, L);
+}
+const sel = () => st.pieces.find(p => p.id === st.selected) || null;
+
+/* ---------- Leiste & Panel ---------- */
+const STAGE_HINT = {
+  1: "Die Vorlage zeigt jedes Teil in seiner Farbe. Lege die Teile darauf.",
+  2: "Die Linien zeigen, wo welches Teil liegt.",
+  3: "Nur der Umriss ist zu sehen. Finde heraus, wie die Teile liegen.",
+  4: "Die Vorlage ist halb so groß und liegt in der Ecke. Lege die Figur daneben nach.",
+  5: "Es gibt nur eine Beschreibung. Lies genau und lege die Figur.",
+  6: "Alle sieben Teile. Erfinde eine eigene Figur.",
+};
+const STAGE_NAME = { 1: "Stufe 1 · farbig vorgezeichnet", 2: "Stufe 2 · Innenlinien", 3: "Stufe 3 · Umriss", 4: "Stufe 4 · Umriss verkleinert", 5: "Stufe 5 · nur in Worten", 6: "Stufe 6 · selbst erfinden" };
+function renderPanel() {
+  document.querySelectorAll(".seg button").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.stage === st.stage)));
+  $("modeHint").textContent = STAGE_HINT[st.stage];
+  $("secTasks").hidden = st.stage === 6;
+  $("secHelp").hidden = st.stage === 4 || st.stage === 6;
+  $("btnPlace").hidden = st.stage > 3;
+  $("btnLine").hidden = st.stage !== 3;
+  $("btnPeek").hidden = st.stage !== 5;
+  document.querySelectorAll(".task").forEach(b => b.setAttribute("aria-pressed", String(st.puzzle && b.dataset.id === st.puzzle.id)));
+  $("btnCheck").hidden = !st.showCheck || st.stage === 6;
+  $("optCheck").checked = st.showCheck;
+  $("btnUndo").disabled = !st.undo.length;
+  $("btnReplay").disabled = st.log.length < 1;
+  const total = st.puzzle ? st.puzzle.polys.length : 0;
+  $("helpNote").textContent = st.stage === 3 ? `Linien gezeigt: ${st.revealed} von ${total}` : st.stage === 5 && st.peeks ? `Bild ${st.peeks}× angesehen` : "";
+  $("btnLine").disabled = st.revealed >= total;
+  $("btnPeek").disabled = !!st.peek;
+  renderCard();
+  renderSelInfo();
+}
+function renderCard() {
+  const show = st.stage === 5 || st.stage === 6;
+  $("card").hidden = !show;
+  if (!show) return;
+  $("cardK").textContent = STAGE_NAME[st.stage] + (st.stage === 5 ? ` · ${st.puzzle.name}` : "");
+  const body = $("cardBody"); body.innerHTML = "";
+  const lines = st.stage === 5
+    ? [...(DESC[st.puzzle.id] || [st.puzzle.name]), pieceList(st.puzzle)]
+    : ["Lege eine eigene Figur aus allen sieben Teilen. Gib ihr einen Namen. Beschreibe sie so genau, dass jemand anderes sie nachlegen kann, ohne sie zu sehen."];
+  lines.forEach((t, i) => { const p = document.createElement("p"); p.textContent = t; if (st.stage === 5 && i === lines.length - 1) p.className = "pcs"; body.appendChild(p); });
+  $("cardIn").hidden = st.stage !== 6;
+}
+function renderSelInfo() {
+  const box = $("selinfo"); box.innerHTML = "";
+  const p = sel();
+  if (!p) { box.textContent = "Tippe ein Teil an. Am Griff drehst du es, mit zwei Fingern auch."; return; }
+  const sw = document.createElement("span"); sw.className = "swatch"; sw.style.background = colorOf(p);
+  const b = document.createElement("b"); b.textContent = TYPES[p.type].name[0].toUpperCase() + TYPES[p.type].name.slice(1);
+  box.append(sw, b);
+  const mk = (txt, fn, title) => { const bt = document.createElement("button"); bt.className = "btn small"; bt.textContent = txt; if (title) bt.title = title; bt.onclick = fn; box.appendChild(bt); };
+  mk("Spiegeln", () => act(p, "gespiegelt", () => { p.flip = !p.flip; }), "Teil umdrehen (wie auf die Rückseite legen)");
+  if (st.rotBtns) {
+    mk("↺ 45°", () => act(p, "gedreht", () => { p.rot = norm(p.rot - 45); }), "45° nach links drehen");
+    mk("↻ 45°", () => act(p, "gedreht", () => { p.rot = norm(p.rot + 45); }), "45° nach rechts drehen");
+  }
+}
+function buildTaskList() {
+  const box = $("taskList");
+  for (const lv of [1, 2, 3]) {
+    const wrap = document.createElement("div"); wrap.className = "level";
+    const list = PUZZLES.filter(p => p.level === lv);
+    const counts = list.map(p => p.polys.length);
+    wrap.innerHTML = `<div class="level-h">${LEVELS[lv]} <span>${Math.min(...counts)}${Math.max(...counts) > Math.min(...counts) ? "–" + Math.max(...counts) : ""} Teile</span></div>`;
+    const grid = document.createElement("div"); grid.className = "tasks";
+    for (const pz of list) {
+      const b = document.createElement("button"); b.className = "task"; b.dataset.id = pz.id;
+      const m = Math.max(pz.w, pz.h) / 2 + .6;
+      const th = document.createElementNS(NS, "svg"); th.setAttribute("viewBox", `${-m} ${-m} ${2*m} ${2*m}`); th.setAttribute("aria-hidden", "true");
+      for (const p of pz.polys) el("polygon", { points: ptsAttr(p.pts), fill: "currentColor", stroke: "currentColor", "stroke-width": ".08" }, th);
+      const tn = document.createElement("span"); tn.className = "tn"; tn.textContent = `${pz.name} (${pz.polys.length})`;
+      b.append(th, tn);
+      b.onclick = () => loadPuzzle(pz);
+      grid.appendChild(b);
+    }
+    wrap.appendChild(grid); box.appendChild(wrap);
+  }
+}
+
+/* ---------- Protokoll ---------- */
+function stamp() { const s = Math.floor((Date.now() - st.t0) / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; }
+function addLog(text) {
+  st.log.push({ tm: stamp(), text, snap: snapshot() });
+  renderLog();
+}
+function renderLog(cur) {
+  const ol = $("log"); ol.innerHTML = "";
+  st.log.forEach((e, i) => {
+    const li = document.createElement("li"); if (i === cur) li.className = "cur";
+    const tm = document.createElement("span"); tm.className = "tm"; tm.textContent = e.tm;
+    const tx = document.createElement("span"); tx.textContent = e.text;
+    li.append(tm, tx); ol.appendChild(li);
+  });
+  ol.scrollTop = cur != null ? (ol.children[cur]?.offsetTop || 0) - 40 : ol.scrollHeight;
+  $("btnReplay").disabled = st.log.length < 1;
+}
+const pname = p => TYPES[p.type].name[0].toUpperCase() + TYPES[p.type].name.slice(1);
+
+/* ---------- Änderungen ---------- */
+function norm(r) { r = ((r % 360) + 360) % 360; return r > 180 ? r - 360 : r; }
+function pushUndo(snap) { st.undo.push(snap); if (st.undo.length > 200) st.undo.shift(); }
+function changed() { st.solved = false; clearMarks(); renderTarget(); renderPanel(); }
+function act(p, verb, fn) {
+  pushUndo(snapshot()); fn(); doSnap(p); updatePiece(p);
+  addLog(`${pname(p)} ${verb}`); changed();
+}
+function doSnap(p) {
+  p.rot = norm(p.rot);
+  if (!st.snap || p.locked) return;
+  const k = Math.round(p.rot / 45);
+  if (Math.abs(p.rot - k * 45) < 8) p.rot = norm(k * 45);
+  const mine = absPoly(p);
+  const cands = [];
+  if (st.stage <= 3 && st.puzzle) for (const q of st.puzzle.polys) cands.push(...q.pts);
+  for (const o of st.pieces) if (o !== p && o.visible && !o.inTray) cands.push(...absPoly(o));
+  let best = null;
+  for (const v of mine) for (const c of cands) {
+    const d = Math.hypot(v[0] - c[0], v[1] - c[1]);
+    if (!best || d < best.d) best = { d, dx: c[0] - v[0], dy: c[1] - v[1] };
+  }
+  if (best && best.d < .8) { p.x += best.dx; p.y += best.dy; }
+}
+
+/* ---------- Zeiger ---------- */
+const pointers = new Map();
+let drag = null;
+function toWorld(e) {
+  const m = svg.getScreenCTM().inverse();
+  const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+  const w = pt.matrixTransform(m); return [w.x, w.y];
+}
+const ang = (a, b) => Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / Math.PI;
+function select(id) {
+  st.selected = id;
+  for (const p of st.pieces) els[p.id]?.classList.toggle("sel", p.id === id);
+  renderHandle(); renderSelInfo();
+}
+function toFront(p) { p.z = Math.max(0, ...st.pieces.map(q => q.z || 0)) + 1; const g = els[p.id]; if (g) g.parentNode.appendChild(g); }
+
+svg.addEventListener("pointerdown", e => {
+  if (replay) return;
+  const w = toWorld(e);
+  pointers.set(e.pointerId, w);
+  try { svg.setPointerCapture(e.pointerId); } catch (_) {}
+  if (pointers.size === 2 && drag && drag.piece) { startGesture(); return; }
+  if (pointers.size > 2) return;
+  const handle = e.target.closest("[data-handle]");
+  const pe = e.target.closest("[data-piece]");
+  const p = sel();
+  if (handle && p) {
+    drag = { kind: "rotate", piece: p, before: snapshot(), a0: ang([p.x, p.y], w), rot0: p.rot, moved: false, rotated: false };
+    return;
+  }
+  if (pe) {
+    const q = st.pieces.find(x => x.id === pe.dataset.piece);
+    if (q.locked) { select(null); return; }
+    select(q.id); toFront(q);
+    drag = { kind: "move", piece: q, before: snapshot(), off: [q.x - w[0], q.y - w[1]], moved: false, rotated: false, start: w };
+    e.preventDefault();
+  } else select(null);
+});
+function startGesture() {
+  const [a, b] = [...pointers.values()];
+  const p = drag.piece;
+  drag = { ...drag, kind: "gesture", ga0: ang(a, b), gm0: [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], rot0: p.rot, pos0: [p.x, p.y] };
+}
+svg.addEventListener("pointermove", e => {
+  if (!pointers.has(e.pointerId)) return;
+  const w = toWorld(e); pointers.set(e.pointerId, w);
+  if (!drag) return;
+  const p = drag.piece;
+  if (drag.kind === "move") {
+    if (!drag.moved && Math.hypot(w[0] - drag.start[0], w[1] - drag.start[1]) < .08) return;
+    p.x = w[0] + drag.off[0]; p.y = w[1] + drag.off[1]; drag.moved = true;
+  } else if (drag.kind === "rotate") {
+    p.rot = drag.rot0 + (ang([p.x, p.y], w) - drag.a0); drag.rotated = true;
+  } else if (drag.kind === "gesture" && pointers.size >= 2) {
+    const [a, b] = [...pointers.values()];
+    const m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+    p.rot = drag.rot0 + (ang(a, b) - drag.ga0);
+    p.x = drag.pos0[0] + m[0] - drag.gm0[0]; p.y = drag.pos0[1] + m[1] - drag.gm0[1];
+    drag.rotated = true; drag.moved = true;
+  }
+  if (st.marks) clearMarks();
+  updatePiece(p);
+});
+function endPointer(e) {
+  pointers.delete(e.pointerId);
+  if (!drag) return;
+  if (drag.kind === "gesture" && pointers.size === 1) {
+    // weiter mit einem Finger verschieben
+    const w = [...pointers.values()][0];
+    drag = { ...drag, kind: "move", off: [drag.piece.x - w[0], drag.piece.y - w[1]], start: w };
+    return;
+  }
+  if (pointers.size === 0) finishDrag();
+}
+svg.addEventListener("pointerup", endPointer);
+svg.addEventListener("pointercancel", endPointer);
+function finishDrag() {
+  const d = drag; drag = null;
+  if (!d || (!d.moved && !d.rotated)) return;
+  const p = d.piece;
+  if (d.moved) p.inTray = false;
+  doSnap(p); updatePiece(p);
+  pushUndo(d.before);
+  addLog(`${pname(p)} ${d.moved && d.rotated ? "gedreht und verschoben" : d.rotated ? "gedreht" : "verschoben"}`);
+  changed();
+}
+let wheelT = null, wheelBefore = null;
+svg.addEventListener("wheel", e => {
+  const p = sel(); if (!p || p.locked || replay) return;
+  e.preventDefault();
+  if (!wheelBefore) wheelBefore = snapshot();
+  p.rot += (e.deltaY > 0 ? 5 : -5); updatePiece(p);
+  clearTimeout(wheelT);
+  wheelT = setTimeout(() => { doSnap(p); updatePiece(p); pushUndo(wheelBefore); wheelBefore = null; addLog(`${pname(p)} gedreht`); changed(); }, 450);
+}, { passive: false });
+
+svg.addEventListener("keydown", e => {
+  const pe = e.target.closest && e.target.closest("[data-piece]"); if (!pe || replay) return;
+  const p = st.pieces.find(x => x.id === pe.dataset.piece); if (p.locked) return;
+  const k = e.key, step = e.shiftKey ? 1 : .25;
+  const moves = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
+  if (moves[k]) { e.preventDefault(); pushUndo(snapshot()); p.x += moves[k][0]; p.y += moves[k][1]; p.inTray = false; updatePiece(p); addLog(`${pname(p)} verschoben`); changed(); }
+  else if (k === "q" || k === "e") { e.preventDefault(); pushUndo(snapshot()); p.rot = norm(p.rot + (k === "q" ? -15 : 15)); doSnap(p); updatePiece(p); addLog(`${pname(p)} gedreht`); changed(); }
+  else if (k === "f") { e.preventDefault(); act(p, "gespiegelt", () => { p.flip = !p.flip; }); }
+});
+svg.addEventListener("focusin", e => { const pe = e.target.closest && e.target.closest("[data-piece]"); if (pe && !replay) select(pe.dataset.piece); });
+
+/* ---------- Hilfen ---------- */
+$("btnPlace").onclick = () => {
+  if (!st.puzzle) return;
+  const polys = st.puzzle.polys;
+  const lockedPolys = new Set(st.pieces.filter(p => p.locked).map(p => p.polyIndex));
+  for (let i = 0; i < polys.length; i++) {
+    if (lockedPolys.has(i)) continue;
+    const c = centroid(polys[i].pts);
+    const occupied = st.pieces.some(p => p.visible && !p.locked && !p.inTray && inside(centroid(absPoly(p)), polys[i].pts) && p.type === polys[i].t && inside(c, absPoly(p)));
+    if (occupied) continue;
+    const cand = st.pieces.filter(p => p.visible && !p.locked && p.type === polys[i].t);
+    const p = cand.find(q => q.inTray) || cand.find(q => !polys.some(pl => inside(centroid(absPoly(q)), pl.pts))) || cand[0];
+    if (!p) continue;
+    pushUndo(snapshot());
+    p.locked = true; p.poly = polys[i].pts; p.polyIndex = i; p.inTray = false;
+    if (st.selected === p.id) st.selected = null;
+    renderPieces(); addLog(`Hilfe: ${TYPES[p.type].name} vorgelegt`); changed();
+    return;
+  }
+  flash("Alle Teile liegen schon richtig oder sind vorgelegt.");
+};
+let peekT = null;
+$("btnPeek").onclick = () => {
+  if (!st.puzzle || st.peek) return;
+  st.peek = true; st.peeks = (st.peeks || 0) + 1;
+  addLog("Hilfe: Bild kurz angesehen"); renderTarget(); renderPanel();
+  clearTimeout(peekT);
+  peekT = setTimeout(() => { st.peek = false; renderTarget(); renderPanel(); }, 3000);
+};
+$("btnLine").onclick = () => {
+  if (!st.puzzle || st.revealed >= st.puzzle.polys.length) return;
+  st.revealed++; addLog(`Hilfe: Linie ${st.revealed} gezeigt`); renderTarget(); renderPanel();
+};
+
+/* ---------- Prüfen ---------- */
+function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function rgb(hex) {
+  const c = document.createElement("canvas").getContext("2d"); c.fillStyle = hex; const v = c.fillStyle;
+  if (v[0] === "#") return [parseInt(v.slice(1,3),16), parseInt(v.slice(3,5),16), parseInt(v.slice(5,7),16)];
+  const m = v.match(/\d+/g); return m ? m.slice(0,3).map(Number) : [255,0,0];
+}
+function check() {
+  const R = 12;
+  let tgt = st.puzzle.polys.map(p => p.pts);
+  const pcs = st.pieces.filter(onBoard).map(absPoly);
+  if (!pcs.length) return { empty: true };
+  if (st.stage >= 4) {
+    // Figur liegt frei auf der Tafel: Vorlage an die gelegte Figur heranschieben (Flächenschwerpunkt)
+    const [tx, ty] = areaCentroid(tgt), [px, py] = areaCentroid(pcs);
+    tgt = tgt.map(pl => pl.map(q => [q[0] + px - tx, q[1] + py - ty]));
+  }
+  const all = [...tgt, ...pcs].flat();
+  const x0 = Math.min(...all.map(q => q[0])) - .5, y0 = Math.min(...all.map(q => q[1])) - .5;
+  const x1 = Math.max(...all.map(q => q[0])) + .5, y1 = Math.max(...all.map(q => q[1])) + .5;
+  const W = Math.ceil((x1 - x0) * R), H = Math.ceil((y1 - y0) * R);
+  const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+  const ctx = cv.getContext("2d", { willReadFrequently: true });
+  const raster = polys => {
+    ctx.clearRect(0, 0, W, H); ctx.fillStyle = "#000"; ctx.beginPath();
+    for (const pl of polys) { pl.forEach((q, i) => { const X = (q[0] - x0) * R, Y = (q[1] - y0) * R; i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y); }); ctx.closePath(); }
+    ctx.fill("nonzero");
+    const d = ctx.getImageData(0, 0, W, H).data, out = new Uint8Array(W * H);
+    for (let i = 0; i < out.length; i++) out[i] = d[i * 4 + 3] >= 128 ? 1 : 0;
+    return out;
+  };
+  const T = raster(tgt);
+  const cnt = new Uint8Array(W * H);
+  for (const pl of pcs) { const m = raster([pl]); for (let i = 0; i < m.length; i++) cnt[i] += m[i]; }
+  const gap = new Uint8Array(W * H), over = new Uint8Array(W * H), ovl = new Uint8Array(W * H);
+  let tArea = 0;
+  for (let i = 0; i < T.length; i++) {
+    tArea += T[i];
+    if (T[i] && !cnt[i]) gap[i] = 1;
+    if (!T[i] && cnt[i]) over[i] = 1;
+    if (cnt[i] > 1) ovl[i] = 1;
+  }
+  const open = a => { // feine Ritzen und Säume entfernen (Erosion, dann Dilatation)
+    const er = new Uint8Array(W * H);
+    for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
+      const i = y * W + x; if (!a[i]) continue;
+      let ok = 1;
+      for (let dy = -1; dy <= 1 && ok; dy++) for (let dx = -1; dx <= 1; dx++) if (!a[i + dy * W + dx]) { ok = 0; break; }
+      er[i] = ok;
+    }
+    const di = new Uint8Array(W * H); let n = 0;
+    for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
+      const i = y * W + x; let on = 0;
+      for (let dy = -1; dy <= 1 && !on; dy++) for (let dx = -1; dx <= 1; dx++) if (er[i + dy * W + dx]) { on = 1; break; }
+      if (on && a[i]) { di[i] = 1; n++; }
+    }
+    return [di, n];
+  };
+  const [G, nG] = open(gap), [O, nO] = open(over), [V, nV] = open(ovl);
+  const lim = tArea * .006;
+  const ok = nG <= lim && nO <= lim && nV <= lim;
+  const img = ctx.createImageData(W, H), cg = rgb(cssVar("--gap")), co = rgb(cssVar("--over")), cvv = rgb(cssVar("--overlap"));
+  for (let i = 0; i < W * H; i++) {
+    const c = V[i] ? cvv : O[i] ? co : G[i] ? cg : null;
+    if (!c) continue;
+    const stripe = ((i % W) + Math.floor(i / W)) % 8 < 4;
+    img.data[i*4] = c[0]; img.data[i*4+1] = c[1]; img.data[i*4+2] = c[2]; img.data[i*4+3] = stripe ? 235 : 170;
+  }
+  ctx.putImageData(img, 0, 0);
+  return { ok, nG, nO, nV, lim, url: cv.toDataURL(), box: [x0, y0, x1 - x0, y1 - y0] };
+}
+let lastCheck = null;
+$("btnCheck").onclick = () => {
+  if (!st.puzzle || st.stage === 6) return;
+  const r = check(); lastCheck = r; clearMarks();
+  const fb = $("feedback"); fb.innerHTML = ""; fb.className = "feedback"; fb.hidden = false;
+  if (r.empty) { fb.textContent = st.stage >= 4 ? "Lege zuerst Teile auf die Tafel." : "Lege zuerst Teile auf die Vorlage."; addLog("Geprüft: noch keine Teile gelegt"); return; }
+  if (r.ok) {
+    st.solved = true; renderTarget();
+    fb.classList.add("ok"); fb.textContent = "Passt! Alle Teile liegen richtig.";
+    addLog("Geprüft: passt");
+  } else {
+    const t = document.createElement("span"); t.textContent = "Passt noch nicht.";
+    const b = document.createElement("button"); b.className = "btn small"; b.textContent = "Zeig mir, wo";
+    b.onclick = showMarks;
+    const x = document.createElement("button"); x.className = "btn small"; x.textContent = "Weiter probieren"; x.onclick = clearMarks;
+    fb.append(t, b, x);
+    addLog("Geprüft: passt noch nicht");
+  }
+};
+function showMarks() {
+  const r = lastCheck; if (!r) return;
+  const L = $("layerMarks"); L.innerHTML = "";
+  el("image", { href: r.url, x: r.box[0], y: r.box[1], width: r.box[2], height: r.box[3], preserveAspectRatio: "none", style: "image-rendering:pixelated", opacity: ".95" }, L);
+  st.marks = true;
+  const fb = $("feedback"); fb.innerHTML = "";
+  const lg = document.createElement("div"); lg.className = "legend";
+  const item = (v, txt, show) => { if (!show) return; const s = document.createElement("span"); s.innerHTML = `<i class="swatch" style="background:var(${v})"></i>`; s.append(txt); lg.appendChild(s); };
+  item("--gap", "Lücke", r.nG > r.lim); item("--over", "steht über", r.nO > r.lim); item("--overlap", "liegt übereinander", r.nV > r.lim);
+  const x = document.createElement("button"); x.className = "btn small"; x.textContent = "Ausblenden"; x.onclick = clearMarks;
+  fb.append(lg, x);
+  addLog("Markierungen angesehen");
+}
+function clearMarks() { $("layerMarks").innerHTML = ""; st.marks = null; $("feedback").hidden = true; }
+let flashT;
+function flash(msg) { const fb = $("feedback"); fb.className = "feedback"; fb.textContent = msg; fb.hidden = false; clearTimeout(flashT); flashT = setTimeout(() => fb.hidden = true, 2600); }
+
+/* ---------- Wiedergabe ---------- */
+let playT = null;
+function enterReplay() {
+  if (!st.log.length) return;
+  replay = { saved: snapshot(), idx: 0 };
+  select(null); clearMarks();
+  $("replaybar").hidden = false;
+  $("rpSlider").max = String(st.log.length); $("rpSlider").value = "0";
+  showStep(0);
+}
+function showStep(i) {
+  replay.idx = i;
+  const base = i === 0 ? st.startSnap : st.log[i - 1].snap;
+  restore(base); renderPieces();
+  $("rpCount").textContent = `Schritt ${i} von ${st.log.length}` + (i ? ` · ${st.log[i - 1].text}` : " · Start");
+  $("rpSlider").value = String(i);
+  renderLog(i ? i - 1 : undefined);
+}
+function exitReplay() {
+  clearInterval(playT); playT = null; $("rpPlay").textContent = "Abspielen";
+  if (!replay) return;
+  restore(replay.saved); replay = null;
+  $("replaybar").hidden = true; renderPieces(); renderLog();
+}
+$("btnReplay").onclick = enterReplay;
+$("rpExit").onclick = exitReplay;
+$("rpSlider").oninput = e => { clearInterval(playT); playT = null; $("rpPlay").textContent = "Abspielen"; showStep(+e.target.value); };
+$("rpPlay").onclick = () => {
+  if (playT) { clearInterval(playT); playT = null; $("rpPlay").textContent = "Abspielen"; return; }
+  if (replay.idx >= st.log.length) showStep(0);
+  $("rpPlay").textContent = "Anhalten";
+  playT = setInterval(() => {
+    if (replay.idx >= st.log.length) { clearInterval(playT); playT = null; $("rpPlay").textContent = "Abspielen"; return; }
+    showStep(replay.idx + 1);
+  }, 800);
+};
+
+/* ---------- Steuerung ---------- */
+function startFresh() {
+  clearTimeout(peekT);
+  st.selected = null; st.revealed = 0; st.peek = false; st.peeks = 0; st.log = []; st.undo = []; st.t0 = Date.now(); st.solved = false;
+  freshPieces(); st.startSnap = snapshot();
+  clearMarks(); renderTarget(); renderPieces(); renderLog(); renderPanel();
+}
+function loadPuzzle(pz) { if (replay) exitReplay(); st.puzzle = pz; startFresh(); }
+document.querySelectorAll(".seg button").forEach(b => b.onclick = () => {
+  if (replay) exitReplay();
+  st.stage = +b.dataset.stage; startFresh();
+});
+$("btnUndo").onclick = () => {
+  if (replay || !st.undo.length) return;
+  restore(st.undo.pop()); st.selected = null; renderPieces(); addLog("Rückgängig gemacht"); changed();
+};
+$("btnReset").onclick = () => { if (replay) exitReplay(); startFresh(); };
+$("optSnap").onchange = e => { st.snap = e.target.checked; };
+$("optRotBtn").onchange = e => { st.rotBtns = e.target.checked; renderSelInfo(); };
+$("optMono").onchange = e => { st.mono = e.target.checked; renderTarget(); renderPieces(); renderSelInfo(); };
+$("optCheck").onchange = e => { st.showCheck = e.target.checked; renderPanel(); };
+function setPraes(on) {
+  document.body.classList.toggle("praes", on);
+  $("btnExitPraes").hidden = !on;
+  if (on) { try { document.documentElement.requestFullscreen?.().catch(() => {}); } catch (_) {} }
+  else if (document.fullscreenElement) { try { document.exitFullscreen().catch(() => {}); } catch (_) {} }
+  requestAnimationFrame(setView);
+}
+$("btnPraes").onclick = () => setPraes(true);
+$("btnExitPraes").onclick = () => setPraes(false);
+document.addEventListener("fullscreenchange", () => { if (!document.fullscreenElement && document.body.classList.contains("praes")) setPraes(false); });
+
+const readHash = () => { if (location.hash === "#ohne-pruefen") st.showCheck = false; };
+window.addEventListener("hashchange", () => { st.showCheck = location.hash !== "#ohne-pruefen"; renderPanel(); });
+new ResizeObserver(() => setView()).observe($("board"));
+
+readHash();
+buildTaskList();
+st.orient = isPortrait() ? "port" : "land";
+startFresh();
+setView();
+})();
+</script>
+
+</body>
+</html>
